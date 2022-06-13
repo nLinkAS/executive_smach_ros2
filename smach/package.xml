@@ -11,13 +11,12 @@
     maintainable and modular code.
   </description>
 
-  <maintainer email="gm130s@gmail.com">Isaac I. Y. Saito</maintainer>
+  <maintainer email="inigo.moreno@tecnalia.com">Iñigo Morneo</maintainer>
   <license>BSD</license>
 
   <author>Jonathan Bohren</author>
   <author>Charles Lesire</author>
 
-  <buildtool_depend>ament_python</buildtool_depend>
 
   <export>
     <build_type>ament_python</build_type>

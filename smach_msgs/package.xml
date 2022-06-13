@@ -7,8 +7,7 @@
     this package contains a set of messages that are used by the introspection
     interfaces for smach.
   </description>
-
-  <maintainer email="gm130s@gmail.com">Isaac I. Y. Saito</maintainer>
+  <maintainer email="inigo.moreno@tecnalia.com">Iñigo Morneo</maintainer>
   <license>BSD</license>
 
   <author>Jonathan Bohren</author>
