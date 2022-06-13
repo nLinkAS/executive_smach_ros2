@@ -12,7 +12,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SmachContainerStructure.msg"
   "msg/SmachContainerStatus.msg"
   DEPENDENCIES builtin_interfaces std_msgs
-  ADD_LINTER_TESTS
 )
 
 ament_export_dependencies(rosidl_default_runtime)
