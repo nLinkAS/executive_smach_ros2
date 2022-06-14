@@ -8,33 +8,36 @@ from .ros_state import RosState
 
 __all__ = ['ServiceState']
 
+
 class ServiceState(RosState):
     """State for calling a service."""
-    def __init__(self,
-            node,
-            # Service info
-            service_name,
-            service_spec,
-            # Request Policy
-            request = None,
-            request_cb = None,
-            request_cb_args = [],
-            request_cb_kwargs = {},
-            request_key = None,
-            request_slots = [],
-            # Response Policy
-            response_cb = None,
-            response_cb_args = [],
-            response_cb_kwargs = {},
-            response_key = None,
-            response_slots = [],
-            # Keys
-            input_keys = [],
-            output_keys = [],
-            outcomes = [],
-            ):
 
-        RosState.__init__(self, node, outcomes=['succeeded', 'aborted', 'preempted'])
+    def __init__(self,
+                 node,
+                 # Service info
+                 service_name,
+                 service_spec,
+                 # Request Policy
+                 request=None,
+                 request_cb=None,
+                 request_cb_args=[],
+                 request_cb_kwargs={},
+                 request_key=None,
+                 request_slots=[],
+                 # Response Policy
+                 response_cb=None,
+                 response_cb_args=[],
+                 response_cb_kwargs={},
+                 response_key=None,
+                 response_slots=[],
+                 # Keys
+                 input_keys=[],
+                 output_keys=[],
+                 outcomes=[],
+                 ):
+
+        RosState.__init__(self, node, outcomes=[
+                          'succeeded', 'aborted', 'preempted'])
 
         # Store Service info
         self._service_name = service_name
@@ -48,9 +51,9 @@ class ServiceState(RosState):
         else:
             self._request = request
 
-
         if request_cb is not None and not hasattr(request_cb, '__call__'):
-            raise smach.InvalidStateError("Request callback object given to ServiceState that IS NOT a function object")
+            raise smach.InvalidStateError(
+                "Request callback object given to ServiceState that IS NOT a function object")
 
         self._request_cb = request_cb
         self._request_cb_args = request_cb_args
@@ -74,7 +77,8 @@ class ServiceState(RosState):
 
         # Store response policy
         if response_cb is not None and not hasattr(response_cb, '__call__'):
-            raise smach.InvalidStateError("Response callback object given to ServiceState that IS NOT a function object")
+            raise smach.InvalidStateError(
+                "Response callback object given to ServiceState that IS NOT a function object")
 
         self._response_cb = response_cb
         self._response_cb_args = response_cb_args
@@ -104,13 +108,15 @@ class ServiceState(RosState):
         self._response_slots = response_slots
         self.register_output_keys(response_slots)
 
-        self._proxy = self.node.create_client(self._service_spec, self._service_name)
+        self._proxy = self.node.create_client(
+            self._service_spec, self._service_name)
 
     def execute(self, ud):
         """Execute service"""
         # Check for preemption before executing
         if self.preempt_requested():
-            self.node.get_logger().info("Preempting %s before sending request." % self._service_name)
+            self.node.get_logger().info("Preempting %s before sending request." %
+                                        self._service_name)
             self.service_preempt()
             return 'preempted'
 
@@ -118,18 +124,21 @@ class ServiceState(RosState):
         try:
             while not self._proxy.service_is_ready():
                 if self.preempt_requested():
-                    self.node.get_logger().info("Preempting while waiting for service '%s'." % self._service_name)
+                    self.node.get_logger().info("Preempting while waiting for service '%s'." %
+                                                self._service_name)
                     self.service_preempt()
                     return 'preempted'
                 if not rclpy.ok():
-                    self.node.get_logger().info("Shutting down while waiting for service '%s'." % self._service_name)
+                    self.node.get_logger().info("Shutting down while waiting for service '%s'." %
+                                                self._service_name)
                     return 'aborted'
                 if self._proxy.wait_for_service(1.0):
                     self.node.get_logger().debug("Connected to service '%s'" % self._service_name)
                 else:
                     self.node.get_logger().warn("Still waiting for service '%s'..." % self._service_name)
         except:
-            self.node.get_logger().warn("Terminated while waiting for service '%s'." % self._service_name)
+            self.node.get_logger().warn("Terminated while waiting for service '%s'." %
+                                        self._service_name)
             return 'aborted'
 
         # Grab request key if set
@@ -137,46 +146,49 @@ class ServiceState(RosState):
             if self._request_key in ud:
                 self._request = ud[self._request_key]
             else:
-                self.node.get_logger().error("Requested request key '%s' not in userdata struture. Available keys are: %s" % (self._request_key, str(list(ud.keys()))))
+                self.node.get_logger().error("Requested request key '%s' not in userdata struture. Available keys are: %s" %
+                                             (self._request_key, str(list(ud.keys()))))
                 return 'aborted'
 
         # Write request fields from userdata if set
         for key in self._request_slots:
             if key in ud:
-                setattr(self._request,key,ud[key])
+                setattr(self._request, key, ud[key])
             else:
-                self.node.get_logger().error("Requested request slot key '%s' is not in userdata strcture. Available keys are: %s" % (key, str(list(ud.keys()))))
+                self.node.get_logger().error("Requested request slot key '%s' is not in userdata strcture. Available keys are: %s" %
+                                             (key, str(list(ud.keys()))))
                 return 'aborted'
 
         # Call user-supplied callback, if set, to get a request
         if self._request_cb is not None:
-            try:
-                request_update = self._request_cb(
-                        smach.Remapper(
-                                ud,
-                                self._request_cb_input_keys,
-                                self._request_cb_output_keys,
-                                []),
-                        self._request,
-                        *self._request_cb_args,
-                        **self._request_cb_kwargs)
-                if request_update is not None:
-                    self._request = request_update
-            except:
-                self.node.get_logger().error("Could not execute request callback: "+traceback.format_exc())
-                return 'aborted'
+            request_update = self._request_cb(
+                smach.Remapper(
+                    ud,
+                    self._request_cb_input_keys,
+                    self._request_cb_output_keys,
+                    []),
+                self._request,
+                *self._request_cb_args,
+                **self._request_cb_kwargs)
+            if request_update is not None:
+                self._request = request_update
 
         if self._request is None:
-            self.node.get_logger().error("Attempting to call service "+self._service_name+" with no request")
+            self.node.get_logger().error("Attempting to call service " +
+                                         self._service_name+" with no request")
             return 'aborted'
 
         # Call service
         # Abandon hope, all ye who enter here
         try:
-            self.node.get_logger().debug("Calling service %s with request:\n%s" % (self._service_name, str(self._request)))
-            self._response = self._proxy.call(self._request)
+            self.node.get_logger().debug("Calling service %s with request:\n%s" %
+                                         (self._service_name, str(self._request)))
+            self._response_future = self._proxy.call_async(self._request)
+            rclpy.spin_until_future_complete(self.node, self._response_future)
+            self._response = self._response_future.result()
         except TypeError as ex:
-            self.node.get_logger().error("Exception when calling service '%s': %s" % (self._service_name, str(ex)))
+            self.node.get_logger().error(
+                "Exception when calling service '%s': %s" % (self._service_name, str(ex)))
             return 'aborted'
 
         # Call response callback if it's set
@@ -184,26 +196,28 @@ class ServiceState(RosState):
         if self._response_cb is not None:
             try:
                 response_cb_outcome = self._response_cb(
-                        smach.Remapper(
-                                ud,
-                                self._response_cb_input_keys,
-                                self._response_cb_output_keys,
-                                []),
-                        self._response,
-                        *self._response_cb_args,
-                        **self._response_cb_kwargs)
+                    smach.Remapper(
+                        ud,
+                        self._response_cb_input_keys,
+                        self._response_cb_output_keys,
+                        []),
+                    self._response,
+                    *self._response_cb_args,
+                    **self._response_cb_kwargs)
                 if response_cb_outcome is not None and response_cb_outcome not in self.get_registered_outcomes():
-                    self.node.get_logger().error("Result callback for service "+self._service_name+", "+str(self._response_cb)+" was not registered with the response_cb_outcomes argument. The response callback returned '"+str(response_cb_outcome)+"' but the only registered outcomes are: "+str(self.get_registered_outcomes()))
+                    self.node.get_logger().error("Result callback for service "+self._service_name+", "+str(self._response_cb)+" was not registered with the response_cb_outcomes argument. The response callback returned '" +
+                                                 str(response_cb_outcome)+"' but the only registered outcomes are: "+str(self.get_registered_outcomes()))
                     return 'aborted'
             except:
-                self.node.get_logger().error("Could not execute response callback: "+traceback.format_exc())
+                self.node.get_logger().error(
+                    "Could not execute response callback: "+traceback.format_exc())
                 return 'aborted'
 
         if self._response_key is not None:
             ud[self._response_key] = self._response
 
         for key in self._response_slots:
-            ud[key] = getattr(self._response,key)
+            ud[key] = getattr(self._response, key)
 
         if response_cb_outcome is not None:
             return response_cb_outcome
