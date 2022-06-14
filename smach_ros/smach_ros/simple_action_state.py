@@ -318,7 +318,6 @@ class SimpleActionState(RosState):
         self._done_cond.acquire()
         send_future = self._action_client.send_goal_async(self._goal, feedback_callback=self._goal_feedback_cb)
         rclpy.spin_until_future_complete(self.node, send_future, timeout_sec=10)
-        self.node.get_logger().warn("GOAL_ACTIVE")
         gh = send_future.result()
         if not gh.accepted:
             self.node.get_logger().debug("Action "+self._action_name+" has been rejected!")
@@ -327,7 +326,6 @@ class SimpleActionState(RosState):
 
         rclpy.spin_until_future_complete(self.node, result_future)
 
-        self.node.get_logger().warn("RESULT")
         def get_result_str(i):
             strs = ('STATUS_UNKONWN','STATUS_ACCEPTED','STATUS_EXECUTING','STATUS_CANCELING','STATUS_SUCCEEDED','STATUS_CANCELED','STATUS_ABORTED')
             if i < len(strs):
