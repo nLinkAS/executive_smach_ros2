@@ -213,7 +213,10 @@ class SimpleActionState(RosState):
         self._status = SimpleActionState.WAITING_FOR_SERVER
 
         # Construct action client, and wait for it to come active
-        self._action_client = rclpy.action.ActionClient(self.node, action_spec, action_name)
+        try:
+            self._action_client = rclpy.action.ActionClient(self.node, action_spec, action_name)
+        except ValueError:
+            pass
 
         self._execution_timer_thread = None
         # Condition variables for threading synchronization
