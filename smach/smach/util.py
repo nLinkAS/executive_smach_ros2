@@ -58,6 +58,7 @@ class CBInterface(object):
     >>>     ud.processed_res = data
 
     """
+
     def __init__(self, cb, outcomes=None, input_keys=None, output_keys=None,
                  io_keys=None):
         outcomes = outcomes or []

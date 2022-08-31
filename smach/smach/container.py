@@ -8,6 +8,7 @@ import smach
 
 __all__ = ['Container']
 
+
 class Container(smach.state.State):
     """Smach container interface.
 
@@ -24,15 +25,15 @@ class Container(smach.state.State):
      - Termination: Called when a container is left
     """
 
-    ### Class members
+    # Class members
     _construction_stack = []
     _construction_lock = threading.RLock()
     _context_kwargs = []
 
     def __init__(self,
-            outcomes=[],
-            input_keys=[],
-            output_keys=[]):
+                 outcomes=[],
+                 input_keys=[],
+                 output_keys=[]):
         """Initializes callback lists as empty lists."""
         smach.state.State.__init__(self, outcomes, input_keys, output_keys)
 
@@ -59,14 +60,14 @@ class Container(smach.state.State):
         @return: The sub-states of this container.
         """
         raise NotImplementedError()
-    
+
     def set_initial_state(self, initial_states, userdata):
         """Set initial active states of a container.
-        
+
         @type initial_states: list of string
         @param initial_states: A description of the initial active state of this
         container.
-        
+
         @type userdata: L{UserData}
         @param userdata: Initial userdata for this container.
         """
@@ -74,7 +75,7 @@ class Container(smach.state.State):
 
     def get_initial_states(self):
         """Get the initial states description.
-        
+
         @rtype: list of string
         """
         raise NotImplementedError()
@@ -100,7 +101,7 @@ class Container(smach.state.State):
         """Check consistency of this container."""
         raise NotImplementedError()
 
-    ### Automatic Data passing
+    # Automatic Data passing
     def _copy_input_keys(self, parent_ud, ud):
         if parent_ud is not None:
             input_keys = self.get_registered_input_keys()
@@ -119,7 +120,7 @@ class Container(smach.state.State):
                 except KeyError:
                     smach.logwarn("Attempting to copy output key '%s', but this key does not exist." % ok)
 
-    ### Callback registreation methods
+    # Callback registreation methods
     def register_start_cb(self, start_cb, cb_args=[]):
         """Adds a start callback to this container.
         Start callbacks receive arguments:
@@ -128,7 +129,7 @@ class Container(smach.state.State):
          - initial_states
          - *cb_args
         """
-        self._start_cbs.append((start_cb,cb_args))
+        self._start_cbs.append((start_cb, cb_args))
 
     def register_transition_cb(self, transition_cb, cb_args=[]):
         """Adds a transition callback to this container.
@@ -138,7 +139,7 @@ class Container(smach.state.State):
          - active_states
          - *cb_args
         """
-        self._transition_cbs.append((transition_cb,cb_args))
+        self._transition_cbs.append((transition_cb, cb_args))
 
     def register_termination_cb(self, termination_cb, cb_args=[]):
         """Adds a termination callback to this state machine.
@@ -149,7 +150,7 @@ class Container(smach.state.State):
          - container_outcome
          - *cb_args
         """
-        self._termination_cbs.append((termination_cb, cb_args)) 
+        self._termination_cbs.append((termination_cb, cb_args))
 
     def call_start_cbs(self):
         """Calls the registered start callbacks.
@@ -159,7 +160,7 @@ class Container(smach.state.State):
          - a list of initial states
          """
         try:
-            for (cb,args) in self._start_cbs:
+            for (cb, args) in self._start_cbs:
                 cb(self.userdata, self.get_initial_states(), *args)
         except:
             smach.logerr("Could not execute start callback: "+traceback.format_exc())
@@ -172,7 +173,7 @@ class Container(smach.state.State):
          - a list of active states
          """
         try:
-            for (cb,args) in self._transition_cbs:
+            for (cb, args) in self._transition_cbs:
                 cb(self.userdata, self.get_active_states(), *args)
         except:
             smach.logerr("Could not execute transition callback: "+traceback.format_exc())
@@ -186,13 +187,13 @@ class Container(smach.state.State):
          - the outcome of this container
         """
         try:
-            for (cb,args) in self._termination_cbs:
+            for (cb, args) in self._termination_cbs:
                 cb(self.userdata, terminal_states, outcome, *args)
         except:
             smach.logerr("Could not execute termination callback: "+traceback.format_exc())
 
-
     # Context manager methods
+
     def __enter__(self):
         return self.open()
 
@@ -201,7 +202,8 @@ class Container(smach.state.State):
             return self.close()
         else:
             if exc_type != smach.InvalidStateError and exc_type != smach.InvalidTransitionError:
-                smach.logerr("Error raised during SMACH container construction: \n" + "\n".join(traceback.format_exception(exc_type, exc_val, exc_tb)))
+                smach.logerr("Error raised during SMACH container construction: \n" +
+                             "\n".join(traceback.format_exception(exc_type, exc_val, exc_tb)))
 
     @contextmanager
     def opened(self, **kwargs):
@@ -212,7 +214,7 @@ class Container(smach.state.State):
         try:
             yield self
         finally:
-            Container._context_kwargs = prev_kwargs 
+            Container._context_kwargs = prev_kwargs
             self.close()
 
     def open(self):
@@ -248,7 +250,7 @@ class Container(smach.state.State):
         """
         return len(Container._construction_stack) > 0 and self == Container._construction_stack[-1]
 
-    def assert_opened(self,msg=''):
+    def assert_opened(self, msg=''):
         if not self.is_opened():
             raise smach.InvalidConstructionError(msg)
 
@@ -262,13 +264,15 @@ class Container(smach.state.State):
     @classmethod
     def _currently_opened_container(cls):
         """Get the currently opened container.
-        
+
         This also asserts that the open container is of type cls.
         """
         if Container._any_containers_opened():
             opened_container = Container._construction_stack[-1]
             if not isinstance(opened_container, cls):
-                raise smach.InvalidStateError('Attempting to call a %s construction method without having opened a %s.' % (cls, cls))
+                raise smach.InvalidStateError(
+                    'Attempting to call a %s construction method without having opened a %s.' % (cls, cls))
             return opened_container
         else:
-            raise smach.InvalidStateError('Attempting to access the currently opened container, but no container is opened.')
+            raise smach.InvalidStateError(
+                'Attempting to access the currently opened container, but no container is opened.')

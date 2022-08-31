@@ -7,11 +7,12 @@ import time
 
 import rclpy.action
 from rclpy.action.server import GoalStatus, GoalResponse
-from rclpy.action import ActionServer,CancelResponse
+from rclpy.action import ActionServer, CancelResponse
 from smach_msgs.msg import *
 import smach
 
 __all__ = ['ActionServerWrapper']
+
 
 class ActionServerWrapper():
     """SMACH container wrapper with actionlib ActionServer.
@@ -32,20 +33,20 @@ class ActionServerWrapper():
     """
 
     def __init__(self, node,
-            server_name, action_spec,
-            wrapped_container,
-            succeeded_outcomes = [],
-            aborted_outcomes = [],
-            preempted_outcomes = [],
-            goal_key = 'action_goal',
-            feedback_key = 'action_feedback',
-            result_key = 'action_result',
-            goal_slots_map = {},
-            feedback_slots_map = {},
-            result_slots_map = {},
-            expand_goal_slots = False,
-            pack_result_slots = False
-            ):
+                 server_name, action_spec,
+                 wrapped_container,
+                 succeeded_outcomes=[],
+                 aborted_outcomes=[],
+                 preempted_outcomes=[],
+                 goal_key='action_goal',
+                 feedback_key='action_feedback',
+                 result_key='action_result',
+                 goal_slots_map={},
+                 feedback_slots_map={},
+                 result_slots_map={},
+                 expand_goal_slots=False,
+                 pack_result_slots=False
+                 ):
         """Constructor.
 
         @type server_name: string
@@ -114,7 +115,7 @@ class ActionServerWrapper():
         self.userdata[self._result_key] = action_spec.Result()
         self.userdata[self._feedback_key] = action_spec.Feedback()
 
-        self.wrapped_container.register_input_keys(list([self._goal_key,self._result_key,self._feedback_key]))
+        self.wrapped_container.register_input_keys(list([self._goal_key, self._result_key, self._feedback_key]))
 
         # Action info
         self._server_name = server_name
@@ -123,11 +124,11 @@ class ActionServerWrapper():
         # Construct action server (don't start it until later)
 
         self._action_server = ActionServer(self.__node,
-                                        self._action_spec,
-                                        self._server_name,
-                                        self.execute_cb,
-                                        cancel_callback = self.action_server_wrapper_cancel_callback)
-        
+                                           self._action_spec,
+                                           self._server_name,
+                                           self.execute_cb,
+                                           cancel_callback=self.action_server_wrapper_cancel_callback)
+
         # Store and check the terminal outcomes
         self._succeeded_outcomes = set(succeeded_outcomes)
         self._aborted_outcomes = set(aborted_outcomes)
@@ -139,7 +140,7 @@ class ActionServerWrapper():
         if card_of_unions != sum_of_cards:
             self.__node.get_logger().error("Succeeded, aborted, and preempted outcome lists were not mutually disjoint... expect undefined behavior.")
 
-    ### State machine callbacks
+    # State machine callbacks
     def transition_cb(self, userdata, active_states):
         """Transition callback passed to state machine.
         This method is called each time the state machine transitions.
@@ -159,7 +160,8 @@ class ActionServerWrapper():
         which we switch here. This method will determine from the state machine
         outcome which result should be returned to the action client for this goal.
         """
-        self.__node.get_logger().debug("Wrapped state machine has terminated with final state: "+str(terminal_states)+" and container outcome: "+str(container_outcome))
+        self.__node.get_logger().debug("Wrapped state machine has terminated with final state: " +
+                                       str(terminal_states)+" and container outcome: "+str(container_outcome))
 
     def publish_feedback(self, userdata):
         """Publish the feedback message in the userdata db.
@@ -173,25 +175,22 @@ class ActionServerWrapper():
             # and the constructor of this class sets the feedback key there to an empty struct
             # TODO figure out what the hell is going on here.
             self.__goal_handle.publish_feedback(userdata[self._feedback_key])
-        
 
-
-    def action_server_wrapper_cancel_callback(self,cancel_request):
+    def action_server_wrapper_cancel_callback(self, cancel_request):
         self.__node.get_logger().debug("cancel callback is called")
         return CancelResponse.ACCEPT
 
-
     def preempt_check(self):
         rate = self.__node.create_rate(20)
-        while(self.__goal_handle.status not in [GoalStatus.STATUS_SUCCEEDED,GoalStatus.STATUS_CANCELING,
-                                                GoalStatus.STATUS_CANCELED,GoalStatus.STATUS_ABORTED]):
+        while(self.__goal_handle.status not in [GoalStatus.STATUS_SUCCEEDED, GoalStatus.STATUS_CANCELING,
+                                                GoalStatus.STATUS_CANCELED, GoalStatus.STATUS_ABORTED]):
             rate.sleep()
             self.__node.get_logger().debug("Status %d" % self.__goal_handle.status)
         self.__node.get_logger().debug("Status %d" % self.__goal_handle.status)
         if self.__goal_handle.is_cancel_requested:
             self.preempt_cb()
 
-    ### Action server callbacks
+    # Action server callbacks
     def execute_cb(self, goal_handle):
         """Action server goal callback
         This method is called when the action server associated with this state
@@ -201,8 +200,8 @@ class ActionServerWrapper():
 
         # If the state machine is running, we should preempt it before executing it
         # it again.
-        self.__goal_handle = goal_handle 
-        self.__node.get_logger().debug("Starting wrapped SMACH container") 
+        self.__goal_handle = goal_handle
+        self.__node.get_logger().debug("Starting wrapped SMACH container")
 
         # Expand the goal into the root userdata for this server
         if self._expand_goal_slots:
@@ -211,11 +210,10 @@ class ActionServerWrapper():
                 self.wrapped_container.register_input_keys(list([slot]))
 
         # Store the goal in the container local userdate
-        self.userdata[self._goal_key] = goal_handle.request       
+        self.userdata[self._goal_key] = goal_handle.request
         # Store mapped goal slots in local userdata
-        for from_key,to_key in ((k,self._goal_slots_map[k]) for k in self._goal_slots_map):
-            self.userdata[to_key] = getattr(goal_handle.request,from_key)
-            
+        for from_key, to_key in ((k, self._goal_slots_map[k]) for k in self._goal_slots_map):
+            self.userdata[to_key] = getattr(goal_handle.request, from_key)
 
         thread = threading.Thread(target=self.preempt_check)
         thread.start()
@@ -223,11 +221,11 @@ class ActionServerWrapper():
         # Run the state machine (this blocks)
         try:
             container_outcome = self.wrapped_container.execute(
-                    smach.Remapper(
-                        self.userdata,
-                        self.wrapped_container.get_registered_input_keys(),
-                        self.wrapped_container.get_registered_output_keys(),
-                        {}))
+                smach.Remapper(
+                    self.userdata,
+                    self.wrapped_container.get_registered_input_keys(),
+                    self.wrapped_container.get_registered_output_keys(),
+                    {}))
 
         except smach.InvalidUserCodeError as ex:
             self.__node.get_logger().error("Exception thrown while executing wrapped container.")
@@ -243,7 +241,7 @@ class ActionServerWrapper():
         # Grab the (potentially) populated result from the userdata
         result = self.userdata[self._result_key]
         # Store mapped slots in result
-        for from_key, to_key in ((k,self._result_slots_map[k]) for k in self._result_slots_map):
+        for from_key, to_key in ((k, self._result_slots_map[k]) for k in self._result_slots_map):
             setattr(result, from_key, self.userdata[to_key])
 
         # If any of the result members have been returned to the parent ud
@@ -260,13 +258,12 @@ class ActionServerWrapper():
         elif container_outcome in self._preempted_outcomes:
             self.__node.get_logger().info('PREEMPTED')
             goal_handle.canceled()
-        else: #if container_outcome in self._aborted_outcomes:
+        else:  # if container_outcome in self._aborted_outcomes:
             self.__node.get_logger().info('ABORTED')
             goal_handle.aborted()
-        
+
         thread.join()
         return result
-
 
     def preempt_cb(self):
         """Action server preempt callback.

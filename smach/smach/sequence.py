@@ -7,6 +7,7 @@ import smach
 
 __all__ = ['Sequence']
 
+
 class Sequence(smach.state_machine.StateMachine):
     """Sequence Container
 
@@ -14,11 +15,12 @@ class Sequence(smach.state_machine.StateMachine):
     some auto-generated transitions that create a sequence of states from the
     order in which said states are added to the container.
     """
+
     def __init__(self,
-            outcomes,
-            connector_outcome,
-            input_keys=[],
-            output_keys=[]):
+                 outcomes,
+                 connector_outcome,
+                 input_keys=[],
+                 output_keys=[]):
         """Constructor.
 
         @type outcomes: list of string
@@ -33,19 +35,19 @@ class Sequence(smach.state_machine.StateMachine):
         self._last_added_seq_label = None
         self._connector_outcome = connector_outcome
 
-    ### Construction Methods
+    # Construction Methods
     @staticmethod
-    def add(label, state, transitions = None, remapping = None):
+    def add(label, state, transitions=None, remapping=None):
         """Add a state to the sequence.
         Each state added will receive an additional transition from it to the
         state which is added after it. The transition will follow the outcome
         specified at construction of this container.
-        
+
         @type label: string
         @param label: The label of the state being added.
-        
+
         @param state: An instance of a class implementing the L{State} interface.
-        
+
         @param transitions: A dictionary mapping state outcomes to other state
         labels. If one of these transitions follows the connector outcome
         specified in the constructor, the provided transition will override
@@ -59,7 +61,7 @@ class Sequence(smach.state_machine.StateMachine):
 
         # Perform sequence linking
         if self._last_added_seq_label is not None:
-            #print self._transitions[self._last_added_seq_label]
+            # print self._transitions[self._last_added_seq_label]
 
             last_label = self._last_added_seq_label
             # Check if the connector outcome has been overriden
@@ -71,11 +73,9 @@ class Sequence(smach.state_machine.StateMachine):
             except:
                 smach.logerr("Attempting to construct smach state sequence failed.")
 
-            #print self._transitions[self._last_added_seq_label]
+            # print self._transitions[self._last_added_seq_label]
 
         # Store the last added state label
         self._last_added_seq_label = label
 
         return smach.StateMachine.add(label, state, transitions, remapping)
-
-

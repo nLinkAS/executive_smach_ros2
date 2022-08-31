@@ -4,10 +4,12 @@ import copy
 
 import smach
 
-__all__ = ['UserData','Remapper']
+__all__ = ['UserData', 'Remapper']
+
 
 class UserData(object):
     """SMACH user data structure."""
+
     def __init__(self):
         self._data = {}
         self._locks = {}
@@ -48,7 +50,7 @@ class UserData(object):
     def keys(self):
         return list(self._data.keys())
 
-    def __contains__(self,key):
+    def __contains__(self, key):
         return key in self._data
 
     def __getattr__(self, name):
@@ -62,7 +64,8 @@ class UserData(object):
             with self._locks[name]:
                 temp = self._data[name]
         except:
-            smach.logerr("Userdata key '%s' not available. Available keys are: %s" % (name, str(list(self._data.keys()))))
+            smach.logerr("Userdata key '%s' not available. Available keys are: %s" %
+                         (name, str(list(self._data.keys()))))
             raise KeyError()
 
         return temp
@@ -81,20 +84,24 @@ class UserData(object):
         self._locks[name].release()
 
 # Const wrapper
+
+
 def get_const(obj):
     """Get a const reference to an object if it has "user-defined" attributes."""
-    if hasattr(obj,'__dict__'):
+    if hasattr(obj, '__dict__'):
         smach.logdebug("Making const '%s'" % str(obj))
         return Const(obj)
     else:
         return obj
 
+
 class Const(object):
     """Wrapper that treats "user-defined" fields as immutable.
-    
+
     This wrapper class is used when user data keys are specified as input keys,
     but not as output keys.
     """
+
     def __init__(self, obj):
         smach.logdebug("Making const '%s'" % str(obj))
         self._obj = obj
@@ -102,7 +109,7 @@ class Const(object):
 
     def __getattr__(self, name):
         smach.logdebug("Getting '%s' from const wrapper." % name)
-        attr = getattr(self._obj,name)
+        attr = getattr(self._obj, name)
         return get_const(attr)
 
     def __getitem__(self, name):
@@ -111,7 +118,7 @@ class Const(object):
         return get_const(attr)
 
     def __setattr__(self, name, value):
-        if '_const__initialized' not in self.__dict__: 
+        if '_const__initialized' not in self.__dict__:
             return object.__setattr__(self, name, value)
         smach.logerr("Attempting to set '%s' but this member is read-only." % name)
         raise TypeError()
@@ -120,13 +127,15 @@ class Const(object):
         smach.logerr("Attempting to delete '%s' but this member is read-only." % name)
         raise TypeError()
 
+
 class Remapper(object):
     """Key-remapping proxy to a SMACH userdata structure."""
+
     def __init__(self, ud, input_keys=[], output_keys=[], remapping={}):
         self._ud = ud
         self._input = input_keys
         self._output = output_keys
-        self._map =  remapping
+        self._map = remapping
         self.__initialized = True
 
     def _remap(self, key):
@@ -140,21 +149,23 @@ class Remapper(object):
 
     def __getitem__(self, key):
         if key not in self._input:
-            raise smach.InvalidUserCodeError("Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. " % (key, self._input))
+            raise smach.InvalidUserCodeError(
+                "Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. " % (key, self._input))
         if key not in self._output:
             return get_const(self._ud.__getitem__(self._remap(key)))
         return self._ud.__getitem__(self._remap(key))
 
     def __setitem__(self, key, item):
         if key not in self._output:
-            smach.logerr("Writing to SMACH userdata key '%s' but the only keys that were declared as output from this state were: %s." % (key, self._output))
+            smach.logerr("Writing to SMACH userdata key '%s' but the only keys that were declared as output from this state were: %s." % (
+                key, self._output))
             return
-        self._ud.__setitem__(self._remap(key),item)
+        self._ud.__setitem__(self._remap(key), item)
 
     def keys(self):
         return [self._remap(key) for key in self._ud.keys() if key in self._input]
 
-    def __contains__(self,key):
+    def __contains__(self, key):
         if key in self._input:
             return self._remap(key) in self._ud
         else:
@@ -164,7 +175,8 @@ class Remapper(object):
         if name[0] == '_':
             return object.__getattr__(self, name)
         if name not in self._input:
-            raise smach.InvalidUserCodeError("Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. " % (name, self._input))
+            raise smach.InvalidUserCodeError(
+                "Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. " % (name, self._input))
         if name not in self._output:
             return get_const(getattr(self._ud, self._remap(name)))
         return getattr(self._ud, self._remap(name))
@@ -173,6 +185,7 @@ class Remapper(object):
         if name[0] == '_' or '_Remapper__initialized' not in self.__dict__:
             return object.__setattr__(self, name, value)
         if name not in self._output:
-            smach.logerr("Writing to SMACH userdata key '%s' but the only keys that were declared as output from this state were: %s." % (name, self._output))
+            smach.logerr("Writing to SMACH userdata key '%s' but the only keys that were declared as output from this state were: %s." % (
+                name, self._output))
             return None
         setattr(self._ud, self._remap(name), value)

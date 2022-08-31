@@ -25,6 +25,15 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 
 # ROS imports
+from .condition_state import ConditionState
+from .monitor_state import MonitorState
+from .service_state import ServiceState
+from .simple_action_state import SimpleActionState
+from .node import SmachNode
+from .ros_state import RosState
+from .introspection import IntrospectionClient, IntrospectionServer
+from .action_server_wrapper import ActionServerWrapper
+from .util import set_preempt_handler
 import rclpy
 import rclpy.logging
 
@@ -32,35 +41,26 @@ import rclpy.logging
 import smach
 
 __all__ = ['set_preempt_handler',
-        'RosState',
-        'SmachNode',
-        'ActionServerWrapper', ### Wraps a SMACH SM into an Action server
-        'IntrospectionClient','IntrospectionServer',
-        'SimpleActionState',
-        'ServiceState',
-        'MonitorState',
-        'ConditionState']
+           'RosState',
+           'SmachNode',
+           'ActionServerWrapper',  # Wraps a SMACH SM into an Action server
+           'IntrospectionClient', 'IntrospectionServer',
+           'SimpleActionState',
+           'ServiceState',
+           'MonitorState',
+           'ConditionState']
 
 # Setup smach-ros interface
 smach.set_loggers(
-        rclpy.logging.get_logger(__name__).info,
-        rclpy.logging.get_logger(__name__).warn,
-        rclpy.logging.get_logger(__name__).debug,
-        rclpy.logging.get_logger(__name__).error)
+    rclpy.logging.get_logger(__name__).info,
+    rclpy.logging.get_logger(__name__).warn,
+    rclpy.logging.get_logger(__name__).debug,
+    rclpy.logging.get_logger(__name__).error)
 
 smach.set_shutdown_check(lambda: not rclpy.ok())
 
-### Core classes
-from .util import set_preempt_handler
+# Core classes
 
-### Top-level Containers / Wrappers
-from .action_server_wrapper import ActionServerWrapper
-from .introspection import IntrospectionClient, IntrospectionServer
+# Top-level Containers / Wrappers
 
-### State Classes
-from .ros_state import RosState
-from .node import SmachNode
-from .simple_action_state import SimpleActionState
-from .service_state import ServiceState
-from .monitor_state import MonitorState
-from .condition_state import ConditionState
+# State Classes

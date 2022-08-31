@@ -4,7 +4,8 @@ import traceback
 
 import smach
 
-__all__ = ['State','CBState']
+__all__ = ['State', 'CBState']
+
 
 class State(object):
     """Base class for SMACH states.
@@ -15,6 +16,7 @@ class State(object):
     declared before the state goes active (when its C{execute()} method is
     called) and are checked during construction.
     """
+
     def __init__(self, outcomes=[], input_keys=[], output_keys=[], io_keys=[]):
         """State constructor
         @type outcomes: list of str
@@ -42,7 +44,7 @@ class State(object):
         # Declare preempt flag
         self._preempt_requested = False
 
-    ### Meat
+    # Meat
     def execute(self, ud):
         """Called when executing a state.
         In the base class this raises a NotImplementedError.
@@ -51,8 +53,8 @@ class State(object):
         @param ud: Userdata for the scope in which this state is executing
         """
         raise NotImplementedError()
-    
-    ### SMACH Interface API
+
+    # SMACH Interface API
     def register_outcomes(self, new_outcomes):
         """Add outcomes to the outcome set."""
         self._outcomes = self._outcomes.union(new_outcomes)
@@ -64,7 +66,7 @@ class State(object):
         """
         return tuple(self._outcomes)
 
-    ### Userdata API
+    # Userdata API
     def register_io_keys(self, keys):
         """Add keys to the set of keys from which this state may read and write.
         @type keys: list of str
@@ -98,7 +100,7 @@ class State(object):
         """Get a tuple of registered output keys."""
         return tuple(self._output_keys)
 
-    ### Preemption interface
+    # Preemption interface
     def request_preempt(self):
         """Sets preempt_requested to True"""
         self._preempt_requested = True
@@ -114,6 +116,7 @@ class State(object):
     def preempt_requested(self):
         """True if a preempt has been requested."""
         return self._preempt_requested
+
 
 class CBState(State):
     def __init__(self, cb, cb_args=[], cb_kwargs={}, outcomes=[], input_keys=[], output_keys=[], io_keys=[]):
@@ -150,4 +153,3 @@ class CBState(State):
 
     def execute(self, ud):
         return self._cb(ud, *self._cb_args, **self._cb_kwargs)
-

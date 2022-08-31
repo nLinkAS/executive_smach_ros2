@@ -6,10 +6,12 @@ import threading
 
 __all__ = ['SmachNode']
 
+
 class SmachNode(Node):
     """
     A ROS2 Node executing a SMACH StateMachine
     """
+
     def __init__(self, node_name, **kwargs):
         Node.__init__(self, node_name, **kwargs)
         self.__executor = SingleThreadedExecutor()

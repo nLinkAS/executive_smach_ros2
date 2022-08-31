@@ -1,9 +1,9 @@
 # Copyright (c) 2010, Willow Garage, Inc.
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -12,7 +12,7 @@
 #     * Neither the name of the Willow Garage, Inc. nor the names of its
 #       contributors may be used to endorse or promote products derived from
 #       this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,32 +26,31 @@
 
 # Define default logging macros
 
-### Utilities
+# Utilities
 from smach.log import\
-        set_loggers,\
-        loginfo,\
-        logwarn,\
-        logerr,\
-        logdebug
+    set_loggers,\
+    loginfo,\
+    logwarn,\
+    logerr,\
+    logdebug
 
 from smach.exceptions import\
-        InvalidTransitionError,\
-        InvalidStateError,\
-        InvalidConstructionError,\
-        InvalidUserCodeError
+    InvalidTransitionError,\
+    InvalidStateError,\
+    InvalidConstructionError,\
+    InvalidUserCodeError
 
-### Core classes
+# Core classes
 from smach.state import State, CBState
 from smach.user_data import UserData, Remapper
 from smach.container import Container
 
 from smach.util import\
-        is_shutdown, set_shutdown_check,\
-        has_smach_interface, cb_interface, CBInterface
+    is_shutdown, set_shutdown_check,\
+    has_smach_interface, cb_interface, CBInterface
 
-### Containers
+# Containers
 from smach.state_machine import StateMachine
 from smach.sequence import Sequence
 from smach.concurrence import Concurrence
 from smach.iterator import Iterator
-

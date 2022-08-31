@@ -8,6 +8,7 @@ import smach
 
 __all__ = ['Iterator']
 
+
 class Iterator(smach.container.Container):
     """Sequence Container
 
@@ -15,13 +16,14 @@ class Iterator(smach.container.Container):
     some auto-generated transitions that create a sequence of states from the
     order in which said states are added to the container.
     """
+
     def __init__(self,
-            outcomes,
-            input_keys,
-            output_keys,
-            it = [],
-            it_label = 'it_data',
-            exhausted_outcome = 'exhausted'):
+                 outcomes,
+                 input_keys,
+                 output_keys,
+                 it=[],
+                 it_label='it_data',
+                 exhausted_outcome='exhausted'):
         """Constructor.
 
         @type outcomes: list of string
@@ -51,12 +53,12 @@ class Iterator(smach.container.Container):
         self._final_outcome_map = {}
         self._exhausted_outcome = exhausted_outcome
 
+    # Construction Methods
 
-    ### Construction Methods
     @staticmethod
     def set_iteritems(it, it_label='it_data'):
         """Set the list or generator for the iterator to iterate over.
-        
+
         @type it: iterable
         @param iteritems: Items to iterate over on each cycle
 
@@ -78,14 +80,14 @@ class Iterator(smach.container.Container):
     def set_contained_state(
             label,
             state,
-            loop_outcomes = [],
-            break_outcomes = [],
-            final_outcome_map = {}):
+            loop_outcomes=[],
+            break_outcomes=[],
+            final_outcome_map={}):
         """Set the contained state
-        
+
         @type label: string
         @param label: The label of the state being added.
-        
+
         @type state: L{smach.State}
         @param state: An instance of a class implementing the L{smach.State} interface.
 
@@ -135,7 +137,7 @@ class Iterator(smach.container.Container):
 
         self._final_outcome_map = final_outcome_map
 
-    ### State interface
+    # State interface
     def execute(self, parent_ud):
         self._is_running = True
 
@@ -147,7 +149,7 @@ class Iterator(smach.container.Container):
         # Iterate over items
         outcome = self._exhausted_outcome
 
-        if hasattr(self._items,'__call__'):
+        if hasattr(self._items, '__call__'):
             it = self._items().__iter__()
         else:
             it = self._items.__iter__()
@@ -167,9 +169,8 @@ class Iterator(smach.container.Container):
                 smach.logerr("Could not execute Iterator state '%s'" % self._state_label)
                 raise ex
             except:
-                raise smach.InvalidUserCodeError("Could not execute iterator state '%s' of type '%s': " % ( self._state_label, self._state) + traceback.format_exc())
-                
-
+                raise smach.InvalidUserCodeError("Could not execute iterator state '%s' of type '%s': " % (
+                    self._state_label, self._state) + traceback.format_exc())
 
             # Check if we should stop preemptively
             if self._preempt_requested\
@@ -188,7 +189,7 @@ class Iterator(smach.container.Container):
 
         self._is_running = False
 
-        self.call_termination_cbs(self._state_label,outcome)
+        self.call_termination_cbs(self._state_label, outcome)
 
         return outcome
 
@@ -196,14 +197,15 @@ class Iterator(smach.container.Container):
         self._preempt_requested = True
         if self._is_running:
             self._state.request_preempt()
-    
-    ### Container interface
+
+    # Container interface
     def get_children(self):
         return {self._state_label: self._state}
 
-    def __getitem__(self,key):
+    def __getitem__(self, key):
         if key != self._state_label:
-            smach.logerr("Attempting to get state '%s' from Iterator container. The only available state is '%s'." % (key, self._state_label))
+            smach.logerr("Attempting to get state '%s' from Iterator container. The only available state is '%s'." % (
+                key, self._state_label))
             raise KeyError()
         return self._state
 
@@ -213,11 +215,13 @@ class Iterator(smach.container.Container):
     def set_initial_state(self, initial_states, userdata):
         # Check initial state
         if len(initial_states) > 1:
-            smach.logwarn("Attempting to set initial state to include more than one state, but Iterator container can only have one initial state." % (self._state_label))
+            smach.logwarn("Attempting to set initial state to include more than one state, but Iterator container can only have one initial state." % (
+                self._state_label))
 
         if len(initial_states) > 0:
             if initial_states[0] != self._state_label:
-                smach.logwarn("Attempting to set state '%s' as initial state in Iterator container. The only available state is '%s'." % (initial_states[0], self._state_label))
+                smach.logwarn("Attempting to set state '%s' as initial state in Iterator container. The only available state is '%s'." % (
+                    initial_states[0], self._state_label))
                 raise KeyError()
 
         # Set local userdata
@@ -230,7 +234,7 @@ class Iterator(smach.container.Container):
 
     def get_internal_edges(self):
         int_edges = []
-        
+
         for outcome in self._loop_outcomes:
             int_edges.append([outcome, self._state_label, self._state_label])
 

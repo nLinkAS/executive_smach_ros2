@@ -13,6 +13,7 @@ from .ros_state import RosState
 
 __all__ = ['SimpleActionState']
 
+
 class SimpleActionState(RosState):
     """Simple action client state.
 
@@ -27,32 +28,32 @@ class SimpleActionState(RosState):
     COMPLETED = 4
 
     def __init__(self,
-            node,
-            # Action info
-            action_name,
-            action_spec,
-            # Default goal
-            goal = None,
-            goal_key = None,
-            goal_slots = [],
-            goal_cb = None,
-            goal_cb_args = [],
-            goal_cb_kwargs = {},
-            # Result modes
-            result_key = None,
-            result_slots = [],
-            result_cb = None,
-            result_cb_args = [],
-            result_cb_kwargs = {},
-            # Keys
-            input_keys = [],
-            output_keys = [],
-            outcomes = [],
-            # Timeouts
-            exec_timeout = None,
-            preempt_timeout = Duration(seconds=60.0),
-            server_wait_timeout = Duration(seconds=60.0)
-            ):
+                 node,
+                 # Action info
+                 action_name,
+                 action_spec,
+                 # Default goal
+                 goal=None,
+                 goal_key=None,
+                 goal_slots=[],
+                 goal_cb=None,
+                 goal_cb_args=[],
+                 goal_cb_kwargs={},
+                 # Result modes
+                 result_key=None,
+                 result_slots=[],
+                 result_cb=None,
+                 result_cb_args=[],
+                 result_cb_kwargs={},
+                 # Keys
+                 input_keys=[],
+                 output_keys=[],
+                 outcomes=[],
+                 # Timeouts
+                 exec_timeout=None,
+                 preempt_timeout=Duration(seconds=60.0),
+                 server_wait_timeout=Duration(seconds=60.0)
+                 ):
         """Constructor for SimpleActionState action client wrapper.
 
         @type action_name: string
@@ -117,7 +118,7 @@ class SimpleActionState(RosState):
         """
 
         # Initialize base class
-        RosState.__init__(self, node, outcomes=['succeeded','aborted','preempted'])
+        RosState.__init__(self, node, outcomes=['succeeded', 'aborted', 'preempted'])
 
         # Set action properties
         self._action_name = action_name
@@ -135,9 +136,11 @@ class SimpleActionState(RosState):
             raise smach.InvalidStateError("Goal object given to SimpleActionState that IS a function object")
         sl = action_spec.Goal.get_fields_and_field_types().keys()
         if not all([s in sl for s in goal_slots]):
-            raise smach.InvalidStateError("Goal slots specified are not valid slots. Available slots: %s; specified slots: %s" % (sl, goal_slots))
+            raise smach.InvalidStateError(
+                "Goal slots specified are not valid slots. Available slots: %s; specified slots: %s" % (sl, goal_slots))
         if goal_cb and not hasattr(goal_cb, '__call__'):
-            raise smach.InvalidStateError("Goal callback object given to SimpleActionState that IS NOT a function object")
+            raise smach.InvalidStateError(
+                "Goal callback object given to SimpleActionState that IS NOT a function object")
 
         # Static goal
         if goal is None:
@@ -170,7 +173,8 @@ class SimpleActionState(RosState):
 
         # Set result processing policy
         if result_cb and not hasattr(result_cb, '__call__'):
-            raise smach.InvalidStateError("Result callback object given to SimpleActionState that IS NOT a function object")
+            raise smach.InvalidStateError(
+                "Result callback object given to SimpleActionState that IS NOT a function object")
         if not all([s in action_spec.Result.get_fields_and_field_types().keys() for s in result_slots]):
             raise smach.InvalidStateError("Result slots specified are not valid slots.")
 
@@ -237,7 +241,7 @@ class SimpleActionState(RosState):
                 # Cancel the goal
                 self._action_client.cancel_goal()
 
-    ### smach State API
+    # smach State API
     def request_preempt(self):
         self.node.get_logger().info("Preempt requested on action '%s'" % (self._action_name))
         RosState.request_preempt(self)
@@ -294,14 +298,14 @@ class SimpleActionState(RosState):
         if self._goal_cb is not None:
             try:
                 goal_update = self._goal_cb(
-                        smach.Remapper(
-                                ud,
-                                self._goal_cb_input_keys,
-                                self._goal_cb_output_keys,
-                                []),
-                        self._goal,
-                        *self._goal_cb_args,
-                        **self._goal_cb_kwargs)
+                    smach.Remapper(
+                        ud,
+                        self._goal_cb_input_keys,
+                        self._goal_cb_output_keys,
+                        []),
+                    self._goal,
+                    *self._goal_cb_args,
+                    **self._goal_cb_kwargs)
                 if goal_update is not None:
                     self._goal = goal_update
             except:
@@ -310,7 +314,8 @@ class SimpleActionState(RosState):
 
         # Make sure the necessary paramters have been set
         if self._goal is None and self._goal_cb is None:
-            self.node.get_logger().error("Attempting to activate action "+self._action_name+" with no goal or goal callback set. Did you construct the SimpleActionState properly?")
+            self.node.get_logger().error("Attempting to activate action "+self._action_name +
+                                         " with no goal or goal callback set. Did you construct the SimpleActionState properly?")
             return 'aborted'
 
         # Dispatch goal via non-blocking call to action client
@@ -330,7 +335,8 @@ class SimpleActionState(RosState):
         rclpy.spin_until_future_complete(self.node, result_future)
 
         def get_result_str(i):
-            strs = ('STATUS_UNKONWN','STATUS_ACCEPTED','STATUS_EXECUTING','STATUS_CANCELING','STATUS_SUCCEEDED','STATUS_CANCELED','STATUS_ABORTED')
+            strs = ('STATUS_UNKONWN', 'STATUS_ACCEPTED', 'STATUS_EXECUTING',
+                    'STATUS_CANCELING', 'STATUS_SUCCEEDED', 'STATUS_CANCELED', 'STATUS_ABORTED')
             if i < len(strs):
                 return strs[i]
             else:
@@ -340,9 +346,9 @@ class SimpleActionState(RosState):
 
         # Calculate duration
         self._duration = self.node.get_clock().now() - self._activate_time
-        self.node.get_logger().debug("Action "+self._action_name+" terminated after "\
-                +str(self._duration)+" nanoseconds with result "\
-                +get_result_str(gh.status)+".")
+        self.node.get_logger().debug("Action "+self._action_name+" terminated after "
+                                     + str(self._duration)+" nanoseconds with result "
+                                     + get_result_str(gh.status)+".")
 
         # Store goal state
         self._goal_status = gh.status
@@ -353,7 +359,8 @@ class SimpleActionState(RosState):
 
         # Preempt timeout watch thread
         if self._exec_timeout:
-            self._execution_timer_thread = threading.Thread(name=self._action_name+'/preempt_watchdog', target=self._execution_timer)
+            self._execution_timer_thread = threading.Thread(
+                name=self._action_name+'/preempt_watchdog', target=self._execution_timer)
             self._execution_timer_thread.start()
 
         # Call user result callback if defined
@@ -361,15 +368,16 @@ class SimpleActionState(RosState):
         if self._result_cb is not None:
             try:
                 result_cb_outcome = self._result_cb(
-                        smach.Remapper(
-                                ud,
-                                self._result_cb_input_keys,
-                                self._result_cb_output_keys,
-                                []),
-                        self._goal_status,
-                        self._goal_result)
+                    smach.Remapper(
+                        ud,
+                        self._result_cb_input_keys,
+                        self._result_cb_output_keys,
+                        []),
+                    self._goal_status,
+                    self._goal_result)
                 if result_cb_outcome is not None and result_cb_outcome not in self.get_registered_outcomes():
-                    self.node.get_logger().error("Result callback for action "+self._action_name+", "+str(self._result_cb)+" was not registered with the result_cb_outcomes argument. The result callback returned '"+str(result_cb_outcome)+"' but the only registered outcomes are: "+str(self.get_registered_outcomes()))
+                    self.node.get_logger().error("Result callback for action "+self._action_name+", "+str(self._result_cb)+" was not registered with the result_cb_outcomes argument. The result callback returned '" +
+                                                 str(result_cb_outcome)+"' but the only registered outcomes are: "+str(self.get_registered_outcomes()))
                     return 'aborted'
             except:
                 self.node.get_logger().error("Could not execute result callback: "+traceback.format_exc())
@@ -408,7 +416,6 @@ class SimpleActionState(RosState):
         self._done_cond.release()
 
         return outcome
-
 
     def _goal_feedback_cb(self, feedback):
         """Goal Feedback Callback"""

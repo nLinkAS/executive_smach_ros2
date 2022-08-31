@@ -11,21 +11,28 @@ from smach_ros import *
 
 from smach_msgs.msg import *
 
-### Custom state classe
+# Custom state classe
+
+
 class Setter(RosState):
     """State that sets the key 'a' in its userdata"""
+
     def __init__(self, node):
         RosState.__init__(self, node, outcomes=['done'], output_keys=['a'])
-    def execute(self,ud):
+
+    def execute(self, ud):
         ud.a = 'A'
         self.node.get_logger().info("Added key 'a'.")
         return 'done'
 
+
 class Getter(RosState):
     """State that grabs the key 'a' from userdata, and sets 'b'"""
+
     def __init__(self, node):
         RosState.__init__(self, node, outcomes=['done'], input_keys=['a'], output_keys=['b'])
-    def execute(self,ud):
+
+    def execute(self, ud):
         rate = self.node.create_rate(10)
         while 'a' not in ud and rclpy.ok():
             self.node.get_logger().info("Waiting for key 'a' to appear. ")
@@ -33,7 +40,9 @@ class Getter(RosState):
         ud.b = ud.a
         return 'done'
 
-### Test harness
+# Test harness
+
+
 class TestIntrospection(unittest.TestCase):
 
     def test_introspection(self):
@@ -41,6 +50,7 @@ class TestIntrospection(unittest.TestCase):
         node = rclpy.create_node("sm_node")
         node.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
         executor = SingleThreadedExecutor()
+
         def spin():
             rclpy.spin(node, executor=executor)
 
@@ -52,13 +62,13 @@ class TestIntrospection(unittest.TestCase):
         with sm:
             # Note: the following "Getter" state should fail
             StateMachine.add('GETTER1', Getter(node), {})
-            StateMachine.add('SM2', sm2, {'done':'SM3'})
+            StateMachine.add('SM2', sm2, {'done': 'SM3'})
             with sm2:
                 StateMachine.add("SETTER", Setter(node), {})
-            StateMachine.add('SM3', sm3, {'done':'done'})
+            StateMachine.add('SM3', sm3, {'done': 'done'})
             with sm3:
                 StateMachine.add("SETTER", Setter(node), {})
-            StateMachine.add('GETTER2', Getter(node), {'done':'SM2'})
+            StateMachine.add('GETTER2', Getter(node), {'done': 'SM2'})
 
         sm.set_initial_state(['GETTER1'])
         sm2.set_initial_state(['SETTER'])
@@ -86,10 +96,10 @@ class TestIntrospection(unittest.TestCase):
         injected_ud = UserData()
         injected_ud.a = 'A'
         init_set = intro_client.set_initial_state('intro_test',
-            '/intro_test',
-            ['SM2'],
-            injected_ud,
-            timeout = rclpy.time.Duration(seconds=10.0))
+                                                  '/intro_test',
+                                                  ['SM2'],
+                                                  injected_ud,
+                                                  timeout=rclpy.time.Duration(seconds=10.0))
 
         assert init_set
 
@@ -106,14 +116,16 @@ class TestIntrospection(unittest.TestCase):
         node.get_logger().info("Client destroyed")
         intro_server.destroy_node()
         node.get_logger().info("Server destroyed")
-        #executor.shutdown()
-        #spinner.join()
+        # executor.shutdown()
+        # spinner.join()
         node.destroy_node()
+
 
 def main():
     rclpy.init()
     unittest.main()
     rclpy.shutdown()
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()

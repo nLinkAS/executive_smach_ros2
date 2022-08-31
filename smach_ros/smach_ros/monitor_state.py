@@ -8,11 +8,13 @@ from .ros_state import RosState
 
 __all__ = ['MonitorState']
 
+
 class MonitorState(RosState):
     """
     A state that will check a given ROS topic with a condition function.
     """
-    def __init__(self, node, topic, msg_type, cond_cb, max_checks=-1, input_keys = [], output_keys=[]):
+
+    def __init__(self, node, topic, msg_type, cond_cb, max_checks=-1, input_keys=[], output_keys=[]):
         """State constructor
         @type node rclpy.node.Node
         @param node the ROS2 node executing the state
@@ -32,9 +34,9 @@ class MonitorState(RosState):
         RosState.__init__(
             self,
             node,
-            outcomes=['valid','invalid','preempted'],
-            input_keys = input_keys,
-            output_keys = output_keys)
+            outcomes=['valid', 'invalid', 'preempted'],
+            input_keys=input_keys,
+            output_keys=output_keys)
 
         self._topic = topic
         self._msg_type = msg_type
@@ -45,7 +47,7 @@ class MonitorState(RosState):
         self._trigger_event = threading.Event()
 
         self._sub = self.node.create_subscription(self._msg_type,
-            self._topic, self._cb, 1)
+                                                  self._topic, self._cb, 1)
 
     def execute(self, ud):
         # If prempted before even getting a chance, give up.
@@ -69,13 +71,14 @@ class MonitorState(RosState):
 
         return 'invalid'
 
-    def _cb(self, msg) :
-        if self._ud is None: return
+    def _cb(self, msg):
+        if self._ud is None:
+            return
 
         self.node.get_logger().debug("MonitorState._cb: {}, {}".format(self._ud, msg))
         try:
             if self._cond_cb(self._ud, msg):
-                self._n_checks +=1
+                self._n_checks += 1
             else:
                 self._trigger_event.set()
         except Exception as e:

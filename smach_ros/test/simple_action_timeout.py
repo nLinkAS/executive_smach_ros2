@@ -13,12 +13,15 @@ from smach_ros import *
 from smach_msgs.msg import *
 
 # ## Test harness
+
+
 class TestActionlib(unittest.TestCase):
 
     def test_action_client_timeout(self):
         node = rclpy.create_node('simple_action_test')
         node.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
         executor = SingleThreadedExecutor()
+
         def spin():
             rclpy.spin(node, executor=executor)
 
@@ -40,10 +43,12 @@ class TestActionlib(unittest.TestCase):
         spinner.start()
         sq_outcome = sm.execute()
 
+
 def main():
     rclpy.init()
     unittest.main()
     rclpy.shutdown()
 
+
 if __name__ == "__main__":
-    main();
+    main()

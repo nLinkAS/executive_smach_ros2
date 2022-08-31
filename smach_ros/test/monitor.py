@@ -11,6 +11,7 @@ from smach import *
 from smach_ros import *
 from smach_msgs.msg import *
 
+
 def pinger():
     node = rclpy.create_node("pinger")
     executor = SingleThreadedExecutor()
@@ -24,19 +25,23 @@ def pinger():
         rate.sleep()
     node.destroy_node()
 
+
 def cond_cb(ud, msg):
     """monitor condition cb that modifies user data"""
     assert 'b' in ud
     ud.a = ud.b
     return False
 
-### Test harness
+# Test harness
+
+
 class TestStateMachine(unittest.TestCase):
 
     def test_userdata(self):
         node = rclpy.create_node('monitor_test')
         node.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
         executor = SingleThreadedExecutor()
+
         def spin():
             rclpy.spin(node, executor=executor)
 
@@ -57,7 +62,7 @@ class TestStateMachine(unittest.TestCase):
             StateMachine.add(
                 'MON',
                 MonitorState(node, '/ping', Empty, cond_cb,
-                    input_keys=['b'], output_keys=['a']))
+                             input_keys=['b'], output_keys=['a']))
 
         spinner = threading.Thread(target=spin)
         spinner.start()
@@ -70,14 +75,16 @@ class TestStateMachine(unittest.TestCase):
         assert 'a' in sm.userdata
         assert sm.userdata.a == 'A'
 
-        #executor.shutdown()
-        #spinner.join()
+        # executor.shutdown()
+        # spinner.join()
         node.destroy_node()
+
 
 def main():
     rclpy.init()
     unittest.main()
     rclpy.shutdown()
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()
