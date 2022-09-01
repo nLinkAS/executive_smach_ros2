@@ -88,11 +88,7 @@ class UserData(object):
 
 def get_const(obj):
     """Get a const reference to an object if it has "user-defined" attributes."""
-    if hasattr(obj, '__dict__'):
-        smach.logdebug("Making const '%s'" % str(obj))
-        return Const(obj)
-    else:
-        return obj
+    return obj
 
 
 class Const(object):
@@ -150,7 +146,8 @@ class Remapper(object):
     def __getitem__(self, key):
         if key not in self._input:
             raise smach.InvalidUserCodeError(
-                "Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. " % (key, self._input))
+                "Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. "
+                % (key, self._input))
         if key not in self._output:
             return get_const(self._ud.__getitem__(self._remap(key)))
         return self._ud.__getitem__(self._remap(key))
@@ -176,7 +173,8 @@ class Remapper(object):
             return object.__getattr__(self, name)
         if name not in self._input:
             raise smach.InvalidUserCodeError(
-                "Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. " % (name, self._input))
+                "Reading from SMACH userdata key '%s' but the only keys that were declared as input to this state were: %s. This key needs to be declaread as input to this state. "
+                % (name, self._input))
         if name not in self._output:
             return get_const(getattr(self._ud, self._remap(name)))
         return getattr(self._ud, self._remap(name))
