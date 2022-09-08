@@ -325,43 +325,16 @@ class SimpleActionState(RosState):
         # Wait on done condition
         self._done_cond.acquire()
         send_future = self._action_client.send_goal_async(self._goal, feedback_callback=self._goal_feedback_cb)
-        rclpy.spin_until_future_complete(self.node, send_future, timeout_sec=10)
-        gh = send_future.result()
-        if not gh.accepted:
-            self.node.get_logger().debug("Action "+self._action_name+" has been rejected!")
-            return
-        result_future = gh.get_result_async()
-
-        rclpy.spin_until_future_complete(self.node, result_future)
-
-        def get_result_str(i):
-            strs = ('STATUS_UNKONWN', 'STATUS_ACCEPTED', 'STATUS_EXECUTING',
-                    'STATUS_CANCELING', 'STATUS_SUCCEEDED', 'STATUS_CANCELED', 'STATUS_ABORTED')
-            if i < len(strs):
-                return strs[i]
-            else:
-                return 'UNKNOWN ('+str(i)+')'
-
-        gh = result_future.result()
-
-        # Calculate duration
-        self._duration = self.node.get_clock().now() - self._activate_time
-        self.node.get_logger().debug("Action "+self._action_name+" terminated after "
-                                     + str(self._duration)+" nanoseconds with result "
-                                     + get_result_str(gh.status)+".")
-
-        # Store goal state
-        self._goal_status = gh.status
-        self._goal_result = gh.result
-
-        # Rest status
-        self._status = SimpleActionState.INACTIVE
+        send_future.add_done_callback(self._goal_active_cb)
 
         # Preempt timeout watch thread
         if self._exec_timeout:
             self._execution_timer_thread = threading.Thread(
                 name=self._action_name+'/preempt_watchdog', target=self._execution_timer)
             self._execution_timer_thread.start()
+
+        # Wait for action to finish
+        self._done_cond.wait()
 
         # Call user result callback if defined
         result_cb_outcome = None
@@ -376,8 +349,11 @@ class SimpleActionState(RosState):
                     self._goal_status,
                     self._goal_result)
                 if result_cb_outcome is not None and result_cb_outcome not in self.get_registered_outcomes():
-                    self.node.get_logger().error("Result callback for action "+self._action_name+", "+str(self._result_cb)+" was not registered with the result_cb_outcomes argument. The result callback returned '" +
-                                                 str(result_cb_outcome)+"' but the only registered outcomes are: "+str(self.get_registered_outcomes()))
+                    self.node.get_logger().error(
+                        "Result callback for action " + self._action_name + ", " + str(self._result_cb) +
+                        " was not registered with the result_cb_outcomes argument. The result callback returned '" +
+                        str(result_cb_outcome) + "' but the only registered outcomes are: " +
+                        str(self.get_registered_outcomes()))
                     return 'aborted'
             except:
                 self.node.get_logger().error("Could not execute result callback: "+traceback.format_exc())
@@ -417,6 +393,52 @@ class SimpleActionState(RosState):
 
         return outcome
 
+    # Action client callbacks
+    def _goal_active_cb(self, future):
+        """Goal Active Callback
+        This callback starts the timer that watches for the timeout specified for this action.
+        """
+        gh = future.result()
+        if not gh.accepted:
+            self.node.get_logger().debug("Action "+self._action_name+" has been rejected!")
+            return
+        result_future = gh.get_result_async()
+        result_future.add_done_callback(self._goal_done_cb)
+
     def _goal_feedback_cb(self, feedback):
         """Goal Feedback Callback"""
         self.node.get_logger().debug("Action "+self._action_name+" sent feedback {}".format(feedback))
+
+    def _goal_done_cb(self, future):
+        """Goal Done Callback
+        This callback resets the active flags and reports the duration of the action.
+        Also, if the user has defined a result_cb, it is called here before the
+        method returns.
+        """
+        def get_result_str(i):
+            strs = ('STATUS_UNKONWN', 'STATUS_ACCEPTED', 'STATUS_EXECUTING',
+                    'STATUS_CANCELING', 'STATUS_SUCCEEDED', 'STATUS_CANCELED', 'STATUS_ABORTED')
+            if i < len(strs):
+                return strs[i]
+            else:
+                return 'UNKNOWN ('+str(i)+')'
+
+        gh = future.result()
+
+        # Calculate duration
+        self._duration = self.node.get_clock().now() - self._activate_time
+        self.node.get_logger().debug("Action "+self._action_name+" terminated after "
+                                     + str(self._duration)+" nanoseconds with result "
+                                     + get_result_str(gh.status)+".")
+
+        # Store goal state
+        self._goal_status = gh.status
+        self._goal_result = gh.result
+
+        # Rest status
+        self._status = SimpleActionState.INACTIVE
+
+        # Notify done
+        self._done_cond.acquire()
+        self._done_cond.notify()
+        self._done_cond.release()

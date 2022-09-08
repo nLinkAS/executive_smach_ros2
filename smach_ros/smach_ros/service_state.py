@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import time
 import rclpy
+import rclpy.node
 
 import threading
 
@@ -13,7 +15,7 @@ class ServiceState(RosState):
     """State for calling a service."""
 
     def __init__(self,
-                 node,
+                 node: rclpy.node.Node,
                  # Service info
                  service_name,
                  service_spec,
@@ -42,8 +44,6 @@ class ServiceState(RosState):
         # Store Service info
         self._service_name = service_name
         self._service_spec = service_spec
-
-        self._proxy = None
 
         # Store request policy
         if request is None:
@@ -108,6 +108,7 @@ class ServiceState(RosState):
         self._response_slots = response_slots
         self.register_output_keys(response_slots)
 
+        self._done_cond = threading.Condition()
         self._proxy = self.node.create_client(
             self._service_spec, self._service_name)
 
@@ -180,16 +181,19 @@ class ServiceState(RosState):
 
         # Call service
         # Abandon hope, all ye who enter here
+
+        self._done_cond.acquire()
         try:
             self.node.get_logger().debug("Calling service %s with request:\n%s" %
                                          (self._service_name, str(self._request)))
-            self._response_future = self._proxy.call_async(self._request)
-            rclpy.spin_until_future_complete(self.node, self._response_future)
-            self._response = self._response_future.result()
+            future = self._proxy.call_async(self._request)
+            future.add_done_callback(self._done_cb)
         except TypeError as ex:
             self.node.get_logger().error(
                 "Exception when calling service '%s': %s" % (self._service_name, str(ex)))
             return 'aborted'
+
+        self._done_cond.wait()
 
         # Call response callback if it's set
         response_cb_outcome = None
@@ -223,3 +227,17 @@ class ServiceState(RosState):
             return response_cb_outcome
 
         return 'succeeded'
+
+    def _done_cb(self, future):
+        """Done Callback
+        This callback resets the active flags and reports the duration of the action.
+        Also, if the user has defined a result_cb, it is called here before the
+        method returns.
+        """
+
+        self._response = future.result()
+
+        # Notify done
+        self._done_cond.acquire()
+        self._done_cond.notify()
+        self._done_cond.release()

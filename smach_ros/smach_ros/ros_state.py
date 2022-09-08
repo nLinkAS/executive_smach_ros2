@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import rclpy
+import rclpy.node
 import smach
 
 __all__ = ['RosState']
@@ -15,5 +16,5 @@ class RosState(smach.State):
         self.__node = node
 
     @property
-    def node(self):
+    def node(self) -> rclpy.node.Node:
         return self.__node
