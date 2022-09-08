@@ -186,8 +186,9 @@ class ServiceState(RosState):
         try:
             self.node.get_logger().debug("Calling service %s with request:\n%s" %
                                          (self._service_name, str(self._request)))
-            future = self._proxy.call_async(self._request)
-            future.add_done_callback(self._done_cb)
+            with self.node.executor._tasks_lock:
+                future = self._proxy.call_async(self._request)
+                future.add_done_callback(self._done_cb)
         except TypeError as ex:
             self.node.get_logger().error(
                 "Exception when calling service '%s': %s" % (self._service_name, str(ex)))

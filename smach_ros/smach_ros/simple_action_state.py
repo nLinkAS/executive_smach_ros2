@@ -324,8 +324,10 @@ class SimpleActionState(RosState):
 
         # Wait on done condition
         self._done_cond.acquire()
-        send_future = self._action_client.send_goal_async(self._goal, feedback_callback=self._goal_feedback_cb)
-        send_future.add_done_callback(self._goal_active_cb)
+
+        with self.node.executor._tasks_lock:
+            send_future = self._action_client.send_goal_async(self._goal, feedback_callback=self._goal_feedback_cb)
+            send_future.add_done_callback(self._goal_active_cb)
 
         # Preempt timeout watch thread
         if self._exec_timeout:
@@ -402,8 +404,9 @@ class SimpleActionState(RosState):
         if not gh.accepted:
             self.node.get_logger().debug("Action "+self._action_name+" has been rejected!")
             return
-        result_future = gh.get_result_async()
-        result_future.add_done_callback(self._goal_done_cb)
+        with self.node.executor._tasks_lock:
+            result_future = gh.get_result_async()
+            result_future.add_done_callback(self._goal_done_cb)
 
     def _goal_feedback_cb(self, feedback):
         """Goal Feedback Callback"""
