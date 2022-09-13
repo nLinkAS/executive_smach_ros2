@@ -21,7 +21,7 @@ class Concurrence(smach.container.Container):
     of the class, or after construction with L{Concurrence.add_outcome_map}.
 
     While a concurrence will not terminate until all if its children terminate,
-    it is possible for it to preempt a subset of states 
+    it is possible for it to preempt a subset of states
      - All child states terminate
      - At least one child state terminates
      - A user-defined callback signals termination
@@ -62,7 +62,7 @@ class Concurrence(smach.container.Container):
         @param outcomes: The potential outcomes of this state machine.
 
         @type default_outcome: string
-        @param default_outcome: The outcome of this state if no elements in the 
+        @param default_outcome: The outcome of this state if no elements in the
         outcome map are satisfied by the outcomes of the contained states.
 
 
@@ -80,7 +80,7 @@ class Concurrence(smach.container.Container):
         BOTH states 'FOO' and 'BAR' have terminated
         with outcomes 'succeeded' and 'done', respectively. The outcome
         'aborted' will be returned by the concurrence if the state 'FOO'
-        returns the outcome 'aborted'. 
+        returns the outcome 'aborted'.
 
         If the outcome of a state is not specified, it will be treated as
         irrelevant to the outcome of the concurrence
@@ -97,7 +97,7 @@ class Concurrence(smach.container.Container):
         @param child_termination_cb: This callback gives the user the ability
         to force the concurrence to preempt running states given the
         termination of some other set of states. This is useful when using
-        a concurrence as a monitor container. 
+        a concurrence as a monitor container.
 
         This callback is called each time a child state terminates. It is
         passed a single argument, a dictionary mapping child state labels
@@ -129,7 +129,7 @@ class Concurrence(smach.container.Container):
         will return the default outcome.
 
         B{NOTE: This callback should be a function ONLY of the outcomes of
-        the child states. It should not access any other resources.} 
+        the child states. It should not access any other resources.}
 
         """
         smach.container.Container.__init__(self, outcomes, input_keys, output_keys)
@@ -230,14 +230,12 @@ class Concurrence(smach.container.Container):
             thread.start()
 
         # Wait for done notification
-        self._done_cond.acquire()
-
-        # Notify all threads ready to go
+        with self._done_cond:
+            # Notify all threads ready to go
         self._ready_event.set()
 
         # Wait for a done notification from a thread
         self._done_cond.wait()
-        self._done_cond.release()
 
         # Preempt any running states
         smach.logdebug("SMACH Concurrence preempting running states.")
@@ -249,9 +247,8 @@ class Concurrence(smach.container.Container):
         while not smach.is_shutdown():
             if all([not t.isAlive() for t in self._threads.values()]):
                 break
-            self._done_cond.acquire()
+            with self._done_cond:
             self._done_cond.wait(0.1)
-            self._done_cond.release()
 
         # Check for user code exception
         if self._user_code_exception:

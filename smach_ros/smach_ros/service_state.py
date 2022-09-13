@@ -182,19 +182,19 @@ class ServiceState(RosState):
         # Call service
         # Abandon hope, all ye who enter here
 
-        self._done_cond.acquire()
-        try:
-            self.node.get_logger().debug("Calling service %s with request:\n%s" %
-                                         (self._service_name, str(self._request)))
-            with self.node.executor._tasks_lock:
-                future = self._proxy.call_async(self._request)
-                future.add_done_callback(self._done_cb)
-        except TypeError as ex:
-            self.node.get_logger().error(
-                "Exception when calling service '%s': %s" % (self._service_name, str(ex)))
-            return 'aborted'
+        with self._done_cond:
+            try:
+                self.node.get_logger().debug("Calling service %s with request:\n%s" %
+                                             (self._service_name, str(self._request)))
+                with self.node.executor._tasks_lock:
+                    future = self._proxy.call_async(self._request)
+                    future.add_done_callback(self._done_cb)
+            except TypeError as ex:
+                self.node.get_logger().error(
+                    "Exception when calling service '%s': %s" % (self._service_name, str(ex)))
+                return 'aborted'
 
-        self._done_cond.wait()
+            self._done_cond.wait()
 
         # Call response callback if it's set
         response_cb_outcome = None
@@ -235,10 +235,7 @@ class ServiceState(RosState):
         Also, if the user has defined a result_cb, it is called here before the
         method returns.
         """
-
-        self._response = future.result()
-
         # Notify done
-        self._done_cond.acquire()
-        self._done_cond.notify()
-        self._done_cond.release()
+        with self._done_cond:
+            self._response = future.result()
+            self._done_cond.notify()
