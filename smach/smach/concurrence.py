@@ -231,11 +231,8 @@ class Concurrence(smach.container.Container):
 
         # Wait for done notification
         with self._done_cond:
-            # Notify all threads ready to go
-        self._ready_event.set()
-
-        # Wait for a done notification from a thread
-        self._done_cond.wait()
+            self._ready_event.set()
+            self._done_cond.wait()
 
         # Preempt any running states
         smach.logdebug("SMACH Concurrence preempting running states.")
@@ -248,7 +245,7 @@ class Concurrence(smach.container.Container):
             if all([not t.isAlive() for t in self._threads.values()]):
                 break
             with self._done_cond:
-            self._done_cond.wait(0.1)
+                self._done_cond.wait(0.1)
 
         # Check for user code exception
         if self._user_code_exception:
