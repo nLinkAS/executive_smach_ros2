@@ -219,6 +219,7 @@ class SimpleActionState(RosState):
         # Construct action client, and wait for it to come active
         try:
             self._action_client = rclpy.action.ActionClient(self.node, action_spec, action_name)
+            self._send_future = None
         except ValueError:
             pass
 
@@ -239,8 +240,9 @@ class SimpleActionState(RosState):
             if clock.now() - self._activate_time > self._exec_timeout:
                 self.node.get_logger().warn("Action %s timed out after %d seconds." % (self._action_name, self._exec_timeout.to_sec()))
                 # Cancel the goal
-                self._action_client.cancel_goal()
-
+                ch = self._send_future.result()
+                with self.node.executor._tasks_lock:
+                    ch.cancel_goal_async()
     # smach State API
     def request_preempt(self):
         self.node.get_logger().info("Preempt requested on action '%s'" % (self._action_name))
@@ -248,7 +250,9 @@ class SimpleActionState(RosState):
         if self._status == SimpleActionState.ACTIVE:
             self.node.get_logger().info("Preempt on action '%s' cancelling goal: \n%s" % (self._action_name, str(self._goal)))
             # Cancel the goal
-            self._action_client.cancel_goal()
+            ch = self._send_future.result()
+            with self.node.executor._tasks_lock:
+                ch.cancel_goal_async()
 
     def execute(self, ud):
         """Called when executing a state.
@@ -326,8 +330,8 @@ class SimpleActionState(RosState):
         self._done_cond.acquire()
 
         with self.node.executor._tasks_lock:
-            send_future = self._action_client.send_goal_async(self._goal, feedback_callback=self._goal_feedback_cb)
-            send_future.add_done_callback(self._goal_active_cb)
+            self._send_future = self._action_client.send_goal_async(self._goal, feedback_callback=self._goal_feedback_cb)
+            self._send_future.add_done_callback(self._goal_active_cb)
 
         # Preempt timeout watch thread
         if self._exec_timeout:
