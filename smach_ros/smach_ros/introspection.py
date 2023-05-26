@@ -278,7 +278,7 @@ class IntrospectionServer(Node):
     def __init__(self, server_name, state, path):
         """Traverse the smach tree starting at root, and construct introspection
         proxies for getting and setting debug state."""
-        Node.__init__(self, server_name)
+        Node.__init__(self, server_name, use_global_arguments=False)
 
         # A list of introspection proxies
         self._proxies = []
