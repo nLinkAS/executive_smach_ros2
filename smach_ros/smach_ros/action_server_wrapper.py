@@ -260,7 +260,7 @@ class ActionServerWrapper():
             goal_handle.canceled()
         else:  # if container_outcome in self._aborted_outcomes:
             self.__node.get_logger().info('ABORTED')
-            goal_handle.aborted()
+            goal_handle.abort()
 
         thread.join()
         return result
