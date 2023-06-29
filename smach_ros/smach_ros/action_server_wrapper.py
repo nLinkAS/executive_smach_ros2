@@ -127,7 +127,8 @@ class ActionServerWrapper():
                                            self._action_spec,
                                            self._server_name,
                                            self.execute_cb,
-                                           cancel_callback=self.action_server_wrapper_cancel_callback)
+                                           cancel_callback=self.action_server_wrapper_cancel_callback,
+                                           callback_group=rclpy.callback_groups.ReentrantCallbackGroup())
 
         # Store and check the terminal outcomes
         self._succeeded_outcomes = set(succeeded_outcomes)
